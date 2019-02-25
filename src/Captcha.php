@@ -161,10 +161,9 @@ class Captcha
 
         $code = session()->has('captcha') ? session()->pull('captcha') : null;
 
-        if (
-            (config('captcha.sensitive') && $input == $code) 
-            || (strtolower($input) == strtolower($code))
-        ) {
+        if (config('captcha.sensitive') && $input == $code) {
+            $response =  true;
+        } elseif ( !config('captcha.sensitive') && strtolower($input) == strtolower($code)) {
             $response =  true;
         }
 
