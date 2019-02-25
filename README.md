@@ -1,6 +1,9 @@
 # captcha
 ## Simple Captcha for laravel 5
 
+<a href="https://codeclimate.com/github/hamog/captcha/maintainability"><img src="https://api.codeclimate.com/v1/badges/3b7d561e7b7b4a502dba/maintainability" /></a>
+
+
 ### Installation
 
 Require this package with composer:
