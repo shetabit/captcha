@@ -1,7 +1,8 @@
 # captcha
 ## Simple Captcha for laravel 5
-
 <a href="https://codeclimate.com/github/hamog/captcha/maintainability"><img src="https://api.codeclimate.com/v1/badges/3b7d561e7b7b4a502dba/maintainability" /></a>
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/shetabit/captcha/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/shetabit/captcha/?branch=master)
+[![StyleCI](https://github.styleci.io/repos/64918678/shield?branch=master)]
 
 
 ### Installation
