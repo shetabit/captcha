@@ -15,7 +15,7 @@ class CaptchaTest extends TestCase
 	/**
 	 * setUp
 	 */
-	public function __construct()
+	public function setUp()
 	{
 		$this->captcha = new Captcha();
 	}
@@ -23,7 +23,7 @@ class CaptchaTest extends TestCase
 	/**
 	 * Test captcha image.
 	 */
-	public function testCaptchaImg()
+	public function testCaptcha()
 	{
 		$this->assertTrue($this->captcha instanceof Captcha);
 	}
