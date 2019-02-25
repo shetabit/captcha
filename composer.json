@@ -16,13 +16,24 @@
     "php": ">=5.4",
     "ext-gd": "*"
   },
+  "require-dev": {
+    "phpunit/phpunit": "4.8.*"
+  },
   "autoload": {
     "psr-4": {
       "Hamog\\Captcha\\": "src/"
     },
-    "files": [
-      "src/helpers.php"
-    ]
-  },
-  "minimum-stability": "dev"
+    "autoload-dev": {
+      "classmap": [
+        "tests"
+      ],
+      "psr-4": {
+        "Hamog\\Tests\\": "tests/"
+      },
+      "files": [
+        "src/helpers.php"
+      ]
+    },
+    "minimum-stability": "dev"
+  }
 }

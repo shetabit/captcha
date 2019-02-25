@@ -1,6 +1,6 @@
 <?php
 
-namespace Hamog\Captcha;
+namespace Hamog\Tests;
 
 use Hamog\Captcha\Captcha;
 use PHPUnit\Framework\TestCase;
@@ -15,9 +15,8 @@ class CaptchaTest extends TestCase
 	/**
 	 * setUp
 	 */
-	public function setUp()
+	public function __construct()
 	{
-		parent::setUp();
 		$this->captcha = new Captcha();
 	}
 
