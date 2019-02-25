@@ -21,7 +21,7 @@ class CaptchaTest extends TestCase
 	}
 
 	/**
-	 * Test captcha image.
+	 * Test captcha.
 	 */
 	public function testCaptcha()
 	{
