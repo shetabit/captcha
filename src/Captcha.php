@@ -157,25 +157,24 @@ class Captcha
      */
     public function check($input)
     {
-        if ( ! session()->has('captcha')) {
-            return false;
-        }
+        $response = false;
 
-        $code = session()->pull('captcha');
+        $code = session()->has('captcha') ? session()->pull('captcha') : null;
 
         if(config('captcha.sensitive')) {
             if ($input == $code) {
-                return true;
+                $response =  true;
             } else {
-                return false;
+                $response = false;
             }
         } else {
             if (strtolower($input) == strtolower($code)) {
-                return true;
+                $response =  true;
             } else {
-                return false;
+                $response = false;
             }
         }
+        return $response;
     }
 
     /**
