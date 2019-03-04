@@ -9,45 +9,32 @@ if ( ! function_exists('captcha')) {
      */
     function captcha()
     {
-        return app('captcha')->create();
+        return app('shetabit-captcha')->generate();
     }
 }
 
-if ( ! function_exists('captcha_src')) {
+if ( ! function_exists('captcha_refresh')) {
+
     /**
-     * Return Image URL
+     * Return Image
      *
-     * @return string
+     * @return resource
      */
-    function captcha_src()
+    function captcha_refresh()
     {
-        return app('captcha')->src();
+        return app('shetabit-captcha')->generate();
     }
 }
 
-if ( ! function_exists('captcha_img')) {
-
+if ( ! function_exists('captcha_verify')) {
     /**
-     * Return Captcha HTML image
+     * verify captcha
      *
+     * @param null|$value
      * @return mixed
      */
-    function captcha_img()
+    function captcha_verify($value = null)
     {
-        return app('captcha')->img();
-    }
-}
-
-
-if ( ! function_exists('captcha_check')) {
-    /**
-     * Check captcha
-     *
-     * @param $value
-     * @return bool
-     */
-    function captcha_check($value)
-    {
-        return app('captcha')->check($value);
+        return app('shetabit-captcha')->verify($value);
     }
 }
