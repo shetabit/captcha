@@ -2,33 +2,25 @@
 
 namespace Shetabit\Captcha\Drivers\Simple;
 
-use Illuminate\Support\Facades\View;
+use GdImage;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\View as ViewFactory;
 use Illuminate\Support\ServiceProvider;
+use RuntimeException;
 use Shetabit\Captcha\Abstracts\Driver;
+use Shetabit\Captcha\Provider\CaptchaServiceProvider;
 
 class SimpleDriver extends Driver
 {
-    protected $serviceProvider;
-
-    /**
-     * Driver settings.
-     *
-     * @var object
-     */
-    protected $settings;
-
     /**
      * SimpleDriver constructor.
      * Construct the class with the relevant settings.
      *
-     * SimpleDriver constructor.
-     * @param ServiceProvider $serviceProvider
-     * @param $settings
+     * @param array<string, mixed>|object $settings
      */
-    public function __construct(ServiceProvider $serviceProvider, $settings)
+    public function __construct(protected ServiceProvider $serviceProvider, mixed $settings)
     {
-        $this->serviceProvider = $serviceProvider;
-        $this->settings = (object) $settings;
+        $this->settings = (object) (array) $settings;
 
         $this->bindViews()
              ->bindRoutes()
@@ -36,51 +28,9 @@ class SimpleDriver extends Driver
     }
 
     /**
-     * Bind driver views
-     *
-     * @return $this
-     */
-    protected function bindViews()
-    {
-        $this->serviceProvider->bindViewFile(__DIR__ . '/resources/views', 'captchaSimpleDriver');
-
-        return $this;
-    }
-
-    /**
-     * Bind driver routes
-     *
-     * @return $this
-     */
-    protected function bindRoutes()
-    {
-        $this->serviceProvider->bindRouteFile(__DIR__ . '/routes.php');
-
-        return $this;
-    }
-
-    /**
-     * Publish driver assets
-     *
-     * @return $this
-     */
-    protected function publishResources()
-    {
-        $destinationPath = resource_path('views/vendor/captchaSimpleDriver');
-
-        $this->serviceProvider
-             ->publish(__DIR__ . '/resources/views', $destinationPath, 'views')
-             ->publish(__DIR__ . '/resources/assets', $destinationPath.'/assets', 'assets');
-
-        return $this;
-    }
-
-    /**
      * Prepare CAPTCHA image and memorize its token.
-     *
-     * @return false|string
      */
-    public function prepareCaptchaImage()
+    public function prepareCaptchaImage() : string
     {
         $settings = $this->settings;
 
@@ -93,7 +43,7 @@ class SimpleDriver extends Driver
         // save token in memory
         $this->pushInMemory($settings->sessionKey, $token);
 
-        $image = $this->drawImage(
+        return $this->drawImage(
             $token,
             $settings->width,
             $settings->height,
@@ -101,20 +51,16 @@ class SimpleDriver extends Driver
             $settings->backgroundColor,
             $settings->letterSpacing,
             $settings->fontSize,
-            $settings->fontFamily
+            $this->fontFamily()
         );
-
-        return $image;
     }
 
     /**
      * Generate captcha.
-     *
-     * @return mixed
      */
-    public function generate()
+    public function generate() : View
     {
-        return View::make(
+        return ViewFactory::make(
             'captchaSimpleDriver::captcha',
             [
                 'routeName' => $this->settings->route,
@@ -125,30 +71,80 @@ class SimpleDriver extends Driver
 
     /**
      * Verify token.
-     *
-     * @param null|$token
-     * @return bool
      */
-    public function verify($token = null)
+    public function verify(string|null $token = null) : bool
     {
         $storedToken = $this->pullFromMemory($this->settings->sessionKey);
+
+        // Without a captcha that was handed out there is nothing to verify.
+        if ($storedToken === null || $token === null) {
+            return false;
+        }
 
         if (empty($this->settings->sensitive)) {
             $storedToken = mb_strtolower($storedToken);
             $token = mb_strtolower($token);
         }
 
-        return $token == $storedToken;
+        return hash_equals($storedToken, $token);
+    }
+
+    /**
+     * The font the captcha is written with.
+     *
+     * The configuration points at the published font, which is only there once
+     * `artisan vendor:publish` copied it. The one of the package stands in for
+     * it until then.
+     */
+    public function fontFamily() : string
+    {
+        $configured = (string) ($this->settings->fontFamily ?? '');
+
+        if ($configured !== '' && is_file($configured)) {
+            return $configured;
+        }
+
+        return __DIR__.'/resources/assets/fonts/DroidSerif.ttf';
+    }
+
+    /**
+     * Bind driver views
+     */
+    protected function bindViews() : static
+    {
+        $this->provider()->bindViewFile(__DIR__.'/resources/views', 'captchaSimpleDriver');
+
+        return $this;
+    }
+
+    /**
+     * Bind driver routes
+     */
+    protected function bindRoutes() : static
+    {
+        $this->provider()->bindRouteFile(__DIR__.'/routes.php');
+
+        return $this;
+    }
+
+    /**
+     * Publish driver assets
+     */
+    protected function publishResources() : static
+    {
+        $destinationPath = resource_path('views/vendor/captchaSimpleDriver');
+
+        $this->provider()
+             ->publish(__DIR__.'/resources/views', $destinationPath, ['views', 'captcha-views'])
+             ->publish(__DIR__.'/resources/assets', $destinationPath.'/assets', ['assets', 'captcha-assets']);
+
+        return $this;
     }
 
     /**
      * Save token in memory.
-     *
-     * @param $key
-     * @param $value
-     * @return $this
      */
-    protected function pushInMemory($key, $value)
+    protected function pushInMemory(string $key, string $value) : static
     {
         session()->put($key, $value);
 
@@ -158,29 +154,25 @@ class SimpleDriver extends Driver
     /**
      * Retrieve token from memory.
      *
-     * @return mixed
+     * A captcha is only good for one try, so it is taken out on the way.
      */
-    protected function pullFromMemory($key)
+    protected function pullFromMemory(string $key) : string|null
     {
         $value = session()->pull($key);
 
-        if (! empty($value)) {
-            session()->forget($key);
-        }
-
-        return $value;
+        return is_string($value) ? $value : null;
     }
 
     /**
      * Create new canvas.
-     *
-     * @param $width
-     * @param $height
-     * @return resource
      */
-    protected function canvas($width, $height)
+    protected function canvas(int $width, int $height) : GdImage
     {
-        $canvas = imagecreatetruecolor($width, $height);
+        $canvas = imagecreatetruecolor(max(1, $width), max(1, $height));
+
+        if (!$canvas instanceof GdImage) {
+            throw new RuntimeException('The canvas of the captcha could not be created.');
+        }
 
         return $canvas;
     }
@@ -188,54 +180,45 @@ class SimpleDriver extends Driver
     /**
      * Generate image
      *
-     * @param $token
-     * @param $width
-     * @param $height
-     * @param $foregroundColors
-     * @param $backgroundColor
-     * @param $letterSpacing
-     * @param $fontSize
-     * @param $fontFamily
-     * @return false|string
+     * @param array<int, string> $foregroundColors
      */
     protected function drawImage(
-        $token,
-        $width,
-        $height,
-        $foregroundColors,
-        $backgroundColor,
-        $letterSpacing,
-        $fontSize,
-        $fontFamily
-    ) {
+        string $token,
+        int $width,
+        int $height,
+        array $foregroundColors,
+        string $backgroundColor,
+        int $letterSpacing,
+        int $fontSize,
+        string $fontFamily
+    ) : string {
         $canvas = $this->canvas($width, $height);
 
         $this->fillWithColor($canvas, $backgroundColor);
 
-        $offsetX = ($width - strlen($token) * ($letterSpacing + $fontSize * 0.66)) / 2;
-        $offsetY = ceil(($height) / 1.5);
+        $length = mb_strlen($token);
+        $offsetX = (int) (($width - $length * ($letterSpacing + $fontSize * 0.66)) / 2);
+        $offsetY = (int) ceil($height / 1.5);
 
         // write token
-        for ($i = 0; $i < strlen($token); $i++) {
-            $randomForegroundColor = $foregroundColors[mt_rand(0, count($foregroundColors) - 1)];
+        for ($i = 0; $i < $length; $i++) {
             imagettftext(
                 $canvas,
-                $this->settings->fontSize,
-                ceil(mt_rand(0,10)),
+                $fontSize,
+                random_int(0, 10),
                 $offsetX,
                 $offsetY,
-                $this->prepareColor($canvas, $randomForegroundColor),
+                $this->prepareColor($canvas, $this->randomColor($foregroundColors)),
                 $fontFamily,
-                $token[$i]
+                mb_substr($token, $i, 1)
             );
-            $offsetX += ceil($fontSize * 0.66) + $letterSpacing;
+
+            $offsetX += (int) ceil($fontSize * 0.66) + $letterSpacing;
         }
 
         //Scratches foreground
         for ($i = 0; $i < $this->settings->scratches[0]; $i++) {
-            $randomForegroundColor = $foregroundColors[mt_rand(0, count($foregroundColors) - 1)];
-
-            $this->drawScratch($canvas, $width, $height, $randomForegroundColor);
+            $this->drawScratch($canvas, $width, $height, $this->randomColor($foregroundColors));
         }
 
         //Scratches background
@@ -245,8 +228,7 @@ class SimpleDriver extends Driver
 
         ob_start();
         imagepng($canvas);
-        $content = ob_get_contents();
-        ob_end_clean();
+        $content = (string) ob_get_clean();
 
         imagedestroy($canvas);
 
@@ -255,54 +237,61 @@ class SimpleDriver extends Driver
 
     /**
      * Fill canvas with the given color
-     *
-     * @param $canvas
-     * @param $color
-     * @return $this
      */
-    protected function fillWithColor($canvas, $color)
+    protected function fillWithColor(GdImage $canvas, string $color) : static
     {
-        $fillColor = $this->prepareColor($canvas, $color);
-
-        imagefill($canvas, 0, 0, $fillColor);
+        imagefill($canvas, 0, 0, $this->prepareColor($canvas, $color));
 
         return $this;
     }
 
     /**
-     * Draw scratches
-     *
-     * @param $img
-     * @param $imageWidth
-     * @param $imageHeight
-     * @param $hex
+     * The provider the driver registers its views and routes with.
      */
-    private function drawScratch($img, $imageWidth, $imageHeight, $hex)
+    private function provider() : CaptchaServiceProvider
     {
-        $rgb = $this->hexToRgb($hex);
+        if (!$this->serviceProvider instanceof CaptchaServiceProvider) {
+            throw new RuntimeException(CaptchaServiceProvider::class.' is what this driver registers itself with.');
+        }
+
+        return $this->serviceProvider;
+    }
+
+    /**
+     * One of the given colors.
+     *
+     * @param array<int, string> $colors
+     */
+    private function randomColor(array $colors) : string
+    {
+        return $colors[random_int(0, count($colors) - 1)];
+    }
+
+    /**
+     * Draw scratches
+     */
+    private function drawScratch(GdImage $img, int $imageWidth, int $imageHeight, string $hex) : void
+    {
+        $rgb = $this->hexToRGB($hex);
 
         imageline(
             $img,
-            mt_rand(0, floor($imageWidth / 2)),
-            mt_rand(1, $imageHeight),
-            mt_rand(floor($imageWidth / 2), $imageWidth),
-            mt_rand(1, $imageHeight),
-            imagecolorallocate($img, $rgb['red'], $rgb['green'], $rgb['blue'])
+            random_int(0, (int) floor($imageWidth / 2)),
+            random_int(1, $imageHeight),
+            random_int((int) floor($imageWidth / 2), $imageWidth),
+            random_int(1, $imageHeight),
+            (int) imagecolorallocate($img, $rgb['red'], $rgb['green'], $rgb['blue'])
         );
     }
 
     /**
      * prepare a color
-     *
-     * @param $canvas
-     * @param $color
-     * @return int
      */
-    private function prepareColor($canvas, $hexColor)
+    private function prepareColor(GdImage $canvas, string $hexColor) : int
     {
         $rgbColor = $this->hexToRGB($hexColor);
 
-        return imagecolorallocate(
+        return (int) imagecolorallocate(
             $canvas,
             $rgbColor['red'],
             $rgbColor['green'],
@@ -312,22 +301,22 @@ class SimpleDriver extends Driver
 
     /**
      * Create a random string
-     *
-     * @param string $characters
-     * @param int $minLength
-     * @param int $maxLength
-     * @return string
      */
-    private function randomString($characters = '123456789' , $minLength = 4, $maxLength = 6)
+    private function randomString(string $characters = '123456789', int $minLength = 4, int $maxLength = 6) : string
     {
-        $randomLength = mt_rand($minLength, $maxLength);
-        $string = [];
+        $pool = mb_str_split($characters);
 
-        for ($i = 0; $i < $randomLength; $i++) {
-            $string[] = $characters[mt_rand(1, mb_strlen($characters) - 1)];
+        if ($pool === []) {
+            throw new RuntimeException('A captcha needs characters to be built of.');
         }
 
-        $string = implode($string);
+        $string = '';
+
+        for ($i = random_int($minLength, $maxLength); $i > 0; $i--) {
+            // The first character of the pool used to be out of reach, and the
+            // token of a captcha is worth a random source that can not be told.
+            $string .= $pool[random_int(0, count($pool) - 1)];
+        }
 
         return $string;
     }
@@ -335,39 +324,43 @@ class SimpleDriver extends Driver
     /**
      * Convert hex color to rgb
      *
-     * @param $hexColor
-     * @return array
+     * @return array{red: int<0, 255>, green: int<0, 255>, blue: int<0, 255>}
      */
-    private function hexToRGB($hexColor)
+    private function hexToRGB(string $hexColor) : array
     {
-        $hexColor = ($hexColor[0] == '#') ? substr($hexColor, 1) : $hexColor;
+        $hexColor = str_starts_with($hexColor, '#') ? substr($hexColor, 1) : $hexColor;
 
         // Separate colors
-        switch(strlen($hexColor)) {
+        switch (strlen($hexColor)) {
             case 6:
                 $red = $hexColor[0].$hexColor[1];
                 $green = $hexColor[2].$hexColor[3];
                 $blue = $hexColor[4].$hexColor[5];
                 break;
             case 3:
-                $red = str_repeat($hexColor[0],2);
-                $green = str_repeat($hexColor[1],2);
-                $blue = str_repeat($hexColor[2],2);
+                $red = str_repeat($hexColor[0], 2);
+                $green = str_repeat($hexColor[1], 2);
+                $blue = str_repeat($hexColor[2], 2);
                 break;
             default:
-                $red = $green = $blue = 0;
+                $red = $green = $blue = '0';
                 break;
         }
 
-        // Convert hex to dec
-        $red = hexdec($red);
-        $green = hexdec($green);
-        $blue = hexdec($blue);
-
         return [
-            'red' => $red,
-            'green' => $green,
-            'blue' => $blue,
+            'red' => $this->channel($red),
+            'green' => $this->channel($green),
+            'blue' => $this->channel($blue),
         ];
+    }
+
+    /**
+     * One channel of a color, as a number a color is allocated with.
+     *
+     * @return int<0, 255>
+     */
+    private function channel(string $hex) : int
+    {
+        return min(255, max(0, (int) hexdec($hex)));
     }
 }

@@ -1,16 +1,15 @@
 # Laravel Captcha
 
-This packages works with multiple drivers, 
-and you can create custom drivers if there are not available in the 
-current drivers list (below list).
-
-# Laravel Captcha
-
 [![Software License][ico-license]](LICENSE.md)
 [![Latest Version on Packagist][ico-version]][link-packagist]
-[![Quality Score][ico-code-quality]][link-code-quality]
+[![Total Downloads on Packagist][ico-download]][link-packagist]
+[![Tests][ico-tests]][link-tests]
+[![Code Style][ico-code-style]][link-code-style]
+[![Static Analysis][ico-static-analysis]][link-static-analysis]
+[![Code Coverage][ico-coverage]][link-coverage]
 
-This is a Laravel Package for captcha Integration. This package supports `Laravel 5.4+`.
+This is a Laravel Package for captcha Integration. It requires `PHP 8.4+` (with the `gd` extension) and supports
+`Laravel 12` and `Laravel 13`.
 
 > This packages works with multiple drivers, and you can create custom drivers if there are not available in the [current drivers list](#list-of-available-drivers) (below list).
 
@@ -23,6 +22,7 @@ This is a Laravel Package for captcha Integration. This package supports `Larave
   - [Add captcha in forms](#add-captcha-in-forms)
   - [Validation](#validation)
   - [Create custom drivers](#create-custom-drivers)
+- [Testing](#testing)
 - [Change log](#change-log)
 - [Contributing](#contributing)
 - [Security](#security)
@@ -46,9 +46,8 @@ $ composer require shetabit/captcha
 
 ## Configure
 
-If you are using `Laravel 5.5` or higher then you don't need to add the provider and alias.
-
-In your `config/app.php` file add these two lines.
+The service provider and the `Captcha` alias are registered by Laravel's package discovery, so there is nothing to add
+to `config/app.php` (or to `bootstrap/providers.php`). The old way still works:
 
 ```php
 # In your providers array.
@@ -225,6 +224,47 @@ Once you create that class you have to specify it in the `captcha.php` config fi
 
 **Note:-** You have to make sure that the key of the `map` array is identical to the key of the `drivers` array.
 
+## Testing
+
+Every pull request and every push to `master` is checked by [GitHub Actions][link-actions]: the test suite runs on
+PHP 8.4 and 8.5, against Laravel 12 and 13 and against both the lowest and the highest supported dependencies, the
+coding style is checked with PHP_CodeSniffer, the sources are analysed with PHPStan (level 7, with larastan) and the
+code coverage of the test suite is measured and has to stay above 90%.
+
+The suite has two parts: `tests/Unit` covers the manager, the driver, the provider and the helpers on their own, and
+`tests/Feature` runs the flow of this readme end to end — a form is shown, its captcha image is fetched over the route
+of the driver, and the answer is validated when the form comes back.
+
+You can run the same checks locally. With PHP and Composer installed on your machine:
+
+```bash
+composer install
+
+composer test           # run the test suite
+composer test-coverage  # run the test suite and report code coverage
+composer check-style    # check the coding style
+composer fix-style      # fix the coding style where possible
+composer analyse        # run static analysis
+composer ci             # run all of the checks above
+```
+
+If you would rather not install PHP on your machine, the shipped `Dockerfile` and `Makefile` run everything inside a
+container:
+
+```bash
+make test              # run the test suite
+make coverage          # run the test suite and report code coverage
+make check-style       # check the coding style
+make fix-style         # fix the coding style where possible
+make analyse           # run static analysis
+make ci                # run all of the checks above
+make shell             # open a shell inside the container
+make help              # list every available target
+```
+
+Another PHP version can be used with `make test PHP_VERSION=8.5`, and a single Laravel version with
+`make test-laravel LARAVEL=12`.
+
 ## Change log
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
@@ -248,9 +288,22 @@ The MIT License (MIT). Please see [License File](LICENSE.md) for more informatio
 
 [ico-version]: https://img.shields.io/packagist/v/shetabit/captcha.svg?style=flat-square
 [ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
-[ico-code-quality]: https://img.shields.io/scrutinizer/g/shetabit/captcha.svg?label=Code%20Quality&style=flat-square
 
 [link-packagist]: https://packagist.org/packages/shetabit/captcha
-[link-code-quality]: https://scrutinizer-ci.com/g/shetabit/captcha
 [link-author]: https://github.com/hamog
 [link-contributors]: ../../contributors
+
+[ico-version]: https://img.shields.io/packagist/v/shetabit/captcha.svg?style=flat-square
+[ico-download]: https://img.shields.io/packagist/dt/shetabit/captcha.svg?color=%23F18&style=flat-square
+[ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
+[ico-tests]: https://img.shields.io/github/actions/workflow/status/shetabit/captcha/tests.yml?branch=master&label=Tests&style=flat-square
+[ico-code-style]: https://img.shields.io/github/actions/workflow/status/shetabit/captcha/code-style.yml?branch=master&label=Code%20Style&style=flat-square
+[ico-static-analysis]: https://img.shields.io/github/actions/workflow/status/shetabit/captcha/static-analysis.yml?branch=master&label=Static%20Analysis&style=flat-square
+[ico-coverage]: https://img.shields.io/codecov/c/github/shetabit/captcha/master?label=Coverage&style=flat-square
+
+[link-packagist]: https://packagist.org/packages/shetabit/captcha
+[link-actions]: https://github.com/shetabit/captcha/actions
+[link-tests]: https://github.com/shetabit/captcha/actions/workflows/tests.yml
+[link-code-style]: https://github.com/shetabit/captcha/actions/workflows/code-style.yml
+[link-static-analysis]: https://github.com/shetabit/captcha/actions/workflows/static-analysis.yml
+[link-coverage]: https://codecov.io/gh/shetabit/captcha

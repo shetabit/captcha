@@ -2,68 +2,56 @@
 
 namespace Shetabit\Captcha\Provider;
 
-use Shetabit\Captcha\CaptchaManager;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
+use Shetabit\Captcha\CaptchaManager;
+use Shetabit\Captcha\Facade\Captcha;
 
 class CaptchaServiceProvider extends ServiceProvider
 {
     /**
      * Perform post-registration booting of services.
-     *
-     * @return void
      */
-    public function boot()
+    public function boot() : void
     {
         /**
          * Configurations that needs to be done by user.
          */
         $this->publish(
-            __DIR__ . '/../../config/captcha.php',
+            $this->packagePath('config/captcha.php'),
             config_path('captcha.php'),
-            'config'
+            ['config', 'captcha-config']
         );
 
-        // Validator extensions
-        $this->app['validator']->extend(
-            config('captcha.validator','captcha'),
-            function($attribute, $value, $parameters) {
-                return captcha_verify($value);
-            },
-            'Inserted :attribute is not valid.'
-        );
+        /**
+         * The driver brings the views and the routes it needs with it.
+         */
+        $this->app->make(Captcha::SERVICE_NAME)->prepareDriver();
+
+        $this->registerValidationRule();
     }
 
     /**
      * Register any package services.
-     *
-     * @return void
      */
-    public function register()
+    public function register() : void
     {
+        // Load default configurations
+        $this->mergeConfigFrom($this->packagePath('config/captcha.php'), 'captcha');
+
         // Bind captcha manager
-        $this->app->bind('shetabit-captcha', function () {
-            return new CaptchaManager($this, config('captcha'));
-        });
+        $this->app->singleton(
+            Captcha::SERVICE_NAME,
+            fn (): CaptchaManager => new CaptchaManager($this, (array) config('captcha', []))
+        );
 
-        $this->prepare();
-    }
-
-    /**
-     *  Prepare requirements
-     */
-    private function prepare()
-    {
-        app('shetabit-captcha')->prepareDriver();
+        $this->app->alias(Captcha::SERVICE_NAME, CaptchaManager::class);
     }
 
     /**
      * View binder
-     *
-     * @param $from
-     * @param $namespace
-     * @return $this
      */
-    public function bindViewFile($from, $namespace)
+    public function bindViewFile(string $from, string $namespace) : static
     {
         $this->loadViewsFrom($from, $namespace);
 
@@ -72,11 +60,8 @@ class CaptchaServiceProvider extends ServiceProvider
 
     /**
      * Route binder
-     *
-     * @param $route
-     * @return $this
      */
-    public function bindRouteFile($route)
+    public function bindRouteFile(string $route) : static
     {
         $this->loadRoutesFrom($route);
 
@@ -86,15 +71,32 @@ class CaptchaServiceProvider extends ServiceProvider
     /**
      * Publisher
      *
-     * @param $from
-     * @param $to
-     * @param null $group
-     * @return $this
+     * @param array<int, string>|string|null $group
      */
-    public function publish($from, $to, $group = null)
+    public function publish(string $from, string $to, array|string|null $group = null) : static
     {
         $this->publishes([$from => $to], $group);
 
         return $this;
+    }
+
+    /**
+     * Add the validation rule that verifies a captcha.
+     */
+    protected function registerValidationRule() : void
+    {
+        Validator::extend(
+            (string) config('captcha.validator', 'captcha'),
+            static fn (string $attribute, mixed $value): bool => captcha_verify(is_string($value) ? $value : null),
+            'Inserted :attribute is not valid.'
+        );
+    }
+
+    /**
+     * The absolute path of the given file of the package.
+     */
+    private function packagePath(string $path) : string
+    {
+        return dirname(__DIR__, 2).'/'.$path;
     }
 }

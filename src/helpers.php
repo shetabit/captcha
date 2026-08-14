@@ -1,40 +1,47 @@
 <?php
 
-if ( ! function_exists('captcha')) {
+use Illuminate\Contracts\View\View;
+use Shetabit\Captcha\CaptchaManager;
+use Shetabit\Captcha\Facade\Captcha;
 
+if (!function_exists('captcha')) {
     /**
-     * Return Image
-     *
-     * @return resource
+     * Render the captcha of the current driver.
      */
-    function captcha()
+    function captcha() : View
     {
-        return app('shetabit-captcha')->generate();
+        return captcha_manager()->generate();
     }
 }
 
-if ( ! function_exists('captcha_refresh')) {
-
+if (!function_exists('captcha_refresh')) {
     /**
-     * Return Image
+     * Render a new captcha.
      *
-     * @return resource
+     * @alias captcha
      */
-    function captcha_refresh()
+    function captcha_refresh() : View
     {
-        return app('shetabit-captcha')->generate();
+        return captcha();
     }
 }
 
-if ( ! function_exists('captcha_verify')) {
+if (!function_exists('captcha_verify')) {
     /**
-     * verify captcha
-     *
-     * @param null|$value
-     * @return mixed
+     * Verify the given token against the captcha that was handed out.
      */
-    function captcha_verify($value = null)
+    function captcha_verify(string|null $value = null) : bool
     {
-        return app('shetabit-captcha')->verify($value);
+        return captcha_manager()->verify($value);
+    }
+}
+
+if (!function_exists('captcha_manager')) {
+    /**
+     * The captcha manager of the application.
+     */
+    function captcha_manager() : CaptchaManager
+    {
+        return app(Captcha::SERVICE_NAME);
     }
 }

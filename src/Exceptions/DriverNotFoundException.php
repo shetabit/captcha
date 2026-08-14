@@ -2,7 +2,9 @@
 
 namespace Shetabit\Captcha\Exceptions;
 
-class DriverNotFoundException extends \Exception
+use Exception;
+
+class DriverNotFoundException extends Exception
 {
     //
 }

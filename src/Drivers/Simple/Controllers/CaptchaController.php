@@ -2,26 +2,29 @@
 
 namespace Shetabit\Captcha\Drivers\Simple\Controllers;
 
-use App\Http\Controllers\Controller;
-use Shetabit\Captcha\CaptchaManager;
+use Illuminate\Http\Response;
+use Illuminate\Routing\Controller;
+use Shetabit\Captcha\Drivers\Simple\SimpleDriver;
+use Shetabit\Captcha\Facade\Captcha;
 
-/**
- * Class CaptchaController
- *
- */
 class CaptchaController extends Controller
 {
     /**
      * Get captcha image
-     *
-     * @return mixed
      */
-    public function getCaptcha()
+    public function getCaptcha() : Response
     {
+        $driver = app(Captcha::SERVICE_NAME)->prepareDriver();
+
+        abort_unless($driver instanceof SimpleDriver, 404);
+
         return response(
-            app('shetabit-captcha')->prepareDriver()->prepareCaptchaImage(),
+            $driver->prepareCaptchaImage(),
             200,
-            ['content-type' => 'image/png']
+            [
+                'content-type' => 'image/png',
+                'cache-control' => 'no-store, no-cache, must-revalidate',
+            ]
         );
     }
 }

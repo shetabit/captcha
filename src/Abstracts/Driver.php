@@ -2,40 +2,32 @@
 
 namespace Shetabit\Captcha\Abstracts;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\ServiceProvider;
 use Shetabit\Captcha\Contracts\DriverInterface;
+use stdClass;
 
 abstract class Driver implements DriverInterface
 {
     /**
      * Driver's settings
-     *
-     * @var
      */
-    protected $settings;
+    protected stdClass $settings;
 
     /**
      * Driver constructor.
      *
-     * Driver constructor.
-     * @param ServiceProvider $serviceProvider
-     * @param $settings
+     * @param array<string, mixed>|object $settings
      */
-    abstract public function __construct(ServiceProvider $serviceProvider, $settings);
-
+    abstract public function __construct(ServiceProvider $serviceProvider, mixed $settings);
 
     /**
      * Generate captcha view.
-     *
-     * @return mixed
      */
-    abstract public function generate();
+    abstract public function generate() : View;
 
     /**
-     * Verify the payment
-     *
-     * @param null|$token
-     * @return bool
+     * Verify the given token against the one that was handed out.
      */
-    abstract public function verify($token = null);
+    abstract public function verify(string|null $token = null) : bool;
 }
