@@ -2,23 +2,34 @@
 
 namespace Shetabit\Captcha\Facade;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Facade;
+use Shetabit\Captcha\CaptchaManager;
+use Shetabit\Captcha\Contracts\DriverInterface;
 
 /**
- * Class captcha
+ * The captcha manager, as a Laravel facade.
  *
- * @package Shetabit\Captcha\Facade
- * @see \Shetabit\Captcha\CaptchaManager
+ * @method static CaptchaManager via(string $driver)
+ * @method static string getDriver()
+ * @method static DriverInterface prepareDriver()
+ * @method static View generate()
+ * @method static bool verify(string|null $token = null)
+ *
+ * @see CaptchaManager
  */
 class Captcha extends Facade
 {
     /**
-     * Get the registered name of the component.
-     *
-     * @return string
+     * The name the captcha manager is bound to in the service container.
      */
-    public static function getFacadeAccessor()
+    public const string SERVICE_NAME = 'shetabit-captcha';
+
+    /**
+     * Get the registered name of the component.
+     */
+    public static function getFacadeAccessor() : string
     {
-        return 'shetabit-captcha';
+        return self::SERVICE_NAME;
     }
 }
