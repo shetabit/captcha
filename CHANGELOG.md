@@ -21,6 +21,9 @@ Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) princip
   said it can be. `getDriver()` answers with the name of the driver in use.
 - The `captcha_manager()` helper, `Shetabit\Captcha\Facade\Captcha::SERVICE_NAME` for the name of the binding, and
   the `captcha-config`, `captcha-views` and `captcha-assets` publish tags next to the generic ones.
+- The `recaptcha` driver for [Google reCAPTCHA v3](https://developers.google.com/recaptcha/docs/v3). It adds a hidden
+  `captcha` input and Google's script to the form, and the `captcha` rule checks the token with Google: it passes when
+  the score is high enough and the token was made for the configured action.
 
 ### Changed
 - **Breaking:** PHP 8.4 is now the minimum required version (was PHP 7.2), and only the last two major versions of

@@ -36,7 +36,7 @@
         </include>
         <exclude>
             <!-- Blade templates and fonts, not code the tests can cover. -->
-            <directory>src/Drivers/Simple/resources</directory>
+            <directory>src/Drivers/*/resources</directory>
         </exclude>
     </source>
 

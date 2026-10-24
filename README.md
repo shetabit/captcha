@@ -21,6 +21,7 @@ This is a Laravel Package for captcha Integration. It requires `PHP 8.4+` (with 
 - [How to use](#how-to-use)
   - [Add captcha in forms](#add-captcha-in-forms)
   - [Validation](#validation)
+  - [Google reCAPTCHA v3](#google-recaptcha-v3)
   - [Create custom drivers](#create-custom-drivers)
 - [Testing](#testing)
 - [Change log](#change-log)
@@ -32,6 +33,8 @@ This is a Laravel Package for captcha Integration. It requires `PHP 8.4+` (with 
 # List of available drivers
 
 - Simple : a simple image captcha.
+- Recaptcha : [Google reCAPTCHA v3](https://developers.google.com/recaptcha/docs/v3), which never asks the user
+  anything and gives every form a score instead.
 - Others are under way.
 
 > you can create your own custom driver if not  exists in the list , read the `Create custom drivers` section.
@@ -138,6 +141,44 @@ $request->validate([
 
 ...
 ```
+
+#### Google reCAPTCHA v3
+
+reCAPTCHA v3 doesn't show a challenge. When the form is sent, Google's script gets a token for it, and the `captcha`
+validation rule asks Google about that token. Google gives it a score from `0.0` (a bot) to `1.0` (a human). The form
+passes when the score is at least `score` and the token was made for the configured `action`.
+
+Register a site of the *Score based (v3)* type in the [reCAPTCHA admin console](https://www.google.com/recaptcha/admin),
+put its keys in your `.env` file and make `recaptcha` the default driver:
+
+```dotenv
+RECAPTCHA_SITE_KEY=your-site-key
+RECAPTCHA_SECRET_KEY=your-secret-key
+```
+
+```php
+'default' => 'recaptcha',
+
+'drivers' => [
+    'recaptcha' => [
+        'siteKey' => env('RECAPTCHA_SITE_KEY', ''),
+        'secretKey' => env('RECAPTCHA_SECRET_KEY', ''),
+        'action' => 'submit', // what the token is asked for, Google tells it back
+        'score' => 0.5, // the lowest score that passes, from 0.0 (a bot) to 1.0 (a human)
+        'timeout' => 5, // seconds to wait for Google
+        'script' => 'https://www.google.com/recaptcha/api.js',
+        'url' => 'https://www.google.com/recaptcha/api/siteverify',
+    ],
+    ...
+]
+```
+
+`{!! captcha() !!}` adds a hidden `captcha` input and Google's script to the form, so your forms and the validation
+rule stay the same. The token is only asked for when the form is sent, because it expires after two minutes.
+
+- If Google doesn't answer within `timeout` seconds, the form is refused.
+- Where `www.google.com` can't be reached, point `script` and `url` to `www.recaptcha.net` instead.
+- If you published `config/captcha.php` before, add the `recaptcha` entry to both its `drivers` and its `map` arrays.
 
 #### Create custom drivers:
 

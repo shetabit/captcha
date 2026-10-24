@@ -9,7 +9,9 @@
         "laravel captcha",
         "laravel captcha package",
         "laravel CAPTCHA",
-        "laravel CAPTCHA package"
+        "laravel CAPTCHA package",
+        "recaptcha",
+        "google recaptcha"
     ],
     "homepage": "https://github.com/shetabit/captcha",
     "license": "MIT",

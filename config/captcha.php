@@ -38,6 +38,15 @@ return [
             'sensitive' => false,
             'sessionKey' => 'captcha',
         ],
+        'recaptcha' => [
+            'siteKey' => env('RECAPTCHA_SITE_KEY', ''),
+            'secretKey' => env('RECAPTCHA_SECRET_KEY', ''),
+            'action' => 'submit', // what the token is asked for, Google tells it back
+            'score' => 0.5, // the lowest score that passes, from 0.0 (a bot) to 1.0 (a human)
+            'timeout' => 5, // seconds to wait for Google
+            'script' => 'https://www.google.com/recaptcha/api.js',
+            'url' => 'https://www.google.com/recaptcha/api/siteverify',
+        ],
     ],
 
     'validator' => 'captcha',
@@ -56,5 +65,6 @@ return [
     */
     'map' => [
         'simple' => \Shetabit\Captcha\Drivers\Simple\SimpleDriver::class,
+        'recaptcha' => \Shetabit\Captcha\Drivers\Recaptcha\RecaptchaDriver::class,
     ]
 ];
