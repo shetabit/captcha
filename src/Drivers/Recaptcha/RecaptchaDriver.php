@@ -33,8 +33,11 @@ class RecaptchaDriver extends Driver
      */
     public function generate() : View
     {
+        /** @var view-string $view */
+        $view = 'captchaRecaptchaDriver::captcha';
+
         return ViewFactory::make(
-            'captchaRecaptchaDriver::captcha',
+            $view,
             [
                 'id' => 'captcha-'.Str::random(8),
                 'siteKey' => $this->settings->siteKey,

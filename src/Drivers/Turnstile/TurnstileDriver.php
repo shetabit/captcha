@@ -32,8 +32,11 @@ class TurnstileDriver extends Driver
      */
     public function generate() : View
     {
+        /** @var view-string $view */
+        $view = 'captchaTurnstileDriver::captcha';
+
         return ViewFactory::make(
-            'captchaTurnstileDriver::captcha',
+            $view,
             [
                 'siteKey' => $this->settings->siteKey,
                 'theme' => $this->settings->theme,

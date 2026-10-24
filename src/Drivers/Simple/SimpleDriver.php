@@ -60,8 +60,11 @@ class SimpleDriver extends Driver
      */
     public function generate() : View
     {
+        /** @var view-string $view */
+        $view = 'captchaSimpleDriver::captcha';
+
         return ViewFactory::make(
-            'captchaSimpleDriver::captcha',
+            $view,
             [
                 'routeName' => $this->settings->route,
                 'errorsName' => config('captcha.validator'),

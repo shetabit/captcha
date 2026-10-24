@@ -28,7 +28,10 @@ class FakeDriver extends Driver
 
     public function generate() : View
     {
-        return ViewFactory::make('captchaSimpleDriver::captcha', [
+        /** @var view-string $view */
+        $view = 'captchaSimpleDriver::captcha';
+
+        return ViewFactory::make($view, [
             'routeName' => 'captcha',
             'errorsName' => 'captcha',
         ]);
