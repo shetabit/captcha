@@ -47,6 +47,16 @@ return [
             'script' => 'https://www.google.com/recaptcha/api.js',
             'url' => 'https://www.google.com/recaptcha/api/siteverify',
         ],
+        'turnstile' => [
+            'siteKey' => env('TURNSTILE_SITE_KEY', ''),
+            'secretKey' => env('TURNSTILE_SECRET_KEY', ''),
+            'theme' => 'auto', // auto, light or dark
+            'size' => 'normal', // normal, flexible or compact
+            'action' => '', // when set, a token made for another action is refused
+            'timeout' => 5, // seconds to wait for Cloudflare
+            'script' => 'https://challenges.cloudflare.com/turnstile/v0/api.js',
+            'url' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        ],
     ],
 
     'validator' => 'captcha',
@@ -66,5 +76,6 @@ return [
     'map' => [
         'simple' => \Shetabit\Captcha\Drivers\Simple\SimpleDriver::class,
         'recaptcha' => \Shetabit\Captcha\Drivers\Recaptcha\RecaptchaDriver::class,
+        'turnstile' => \Shetabit\Captcha\Drivers\Turnstile\TurnstileDriver::class,
     ]
 ];

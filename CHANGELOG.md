@@ -24,6 +24,9 @@ Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) princip
 - The `recaptcha` driver for [Google reCAPTCHA v3](https://developers.google.com/recaptcha/docs/v3). It adds a hidden
   `captcha` input and Google's script to the form, and the `captcha` rule checks the token with Google: it passes when
   the score is high enough and the token was made for the configured action.
+- The `turnstile` driver for [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/). It adds the widget
+  and Cloudflare's script to the form, and the `captcha` rule checks the token the widget puts in the `captcha` input
+  with Cloudflare. A token made for another action is refused once an action is configured.
 
 ### Changed
 - **Breaking:** PHP 8.4 is now the minimum required version (was PHP 7.2), and only the last two major versions of

@@ -11,7 +11,9 @@
         "laravel CAPTCHA",
         "laravel CAPTCHA package",
         "recaptcha",
-        "google recaptcha"
+        "google recaptcha",
+        "turnstile",
+        "cloudflare turnstile"
     ],
     "homepage": "https://github.com/shetabit/captcha",
     "license": "MIT",

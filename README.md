@@ -22,6 +22,7 @@ This is a Laravel Package for captcha Integration. It requires `PHP 8.4+` (with 
   - [Add captcha in forms](#add-captcha-in-forms)
   - [Validation](#validation)
   - [Google reCAPTCHA v3](#google-recaptcha-v3)
+  - [Cloudflare Turnstile](#cloudflare-turnstile)
   - [Create custom drivers](#create-custom-drivers)
 - [Testing](#testing)
 - [Change log](#change-log)
@@ -35,6 +36,8 @@ This is a Laravel Package for captcha Integration. It requires `PHP 8.4+` (with 
 - Simple : a simple image captcha.
 - Recaptcha : [Google reCAPTCHA v3](https://developers.google.com/recaptcha/docs/v3), which never asks the user
   anything and gives every form a score instead.
+- Turnstile : [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/), a small widget that most visitors
+  pass without doing anything.
 - Others are under way.
 
 > you can create your own custom driver if not  exists in the list , read the `Create custom drivers` section.
@@ -179,6 +182,46 @@ rule stay the same. The token is only asked for when the form is sent, because i
 - If Google doesn't answer within `timeout` seconds, the form is refused.
 - Where `www.google.com` can't be reached, point `script` and `url` to `www.recaptcha.net` instead.
 - If you published `config/captcha.php` before, add the `recaptcha` entry to both its `drivers` and its `map` arrays.
+
+#### Cloudflare Turnstile
+
+Turnstile shows a small widget in the form. Most visitors pass it without doing anything, and the widget puts a token
+in a `captcha` input. The `captcha` validation rule then asks Cloudflare about that token.
+
+Add a widget in the Turnstile section of the [Cloudflare dashboard](https://dash.cloudflare.com/?to=/:account/turnstile),
+put its keys in your `.env` file and make `turnstile` the default driver:
+
+```dotenv
+TURNSTILE_SITE_KEY=your-site-key
+TURNSTILE_SECRET_KEY=your-secret-key
+```
+
+```php
+'default' => 'turnstile',
+
+'drivers' => [
+    'turnstile' => [
+        'siteKey' => env('TURNSTILE_SITE_KEY', ''),
+        'secretKey' => env('TURNSTILE_SECRET_KEY', ''),
+        'theme' => 'auto', // auto, light or dark
+        'size' => 'normal', // normal, flexible or compact
+        'action' => '', // when set, a token made for another action is refused
+        'timeout' => 5, // seconds to wait for Cloudflare
+        'script' => 'https://challenges.cloudflare.com/turnstile/v0/api.js',
+        'url' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+    ],
+    ...
+]
+```
+
+`{!! captcha() !!}` adds the widget and Cloudflare's script to the form, so your forms and the validation rule stay
+the same.
+
+- If Cloudflare doesn't answer within `timeout` seconds, the form is refused.
+- A token can only be checked once, and it expires after five minutes.
+- For your tests, Cloudflare has [dummy keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/)
+  that always pass or always fail.
+- If you published `config/captcha.php` before, add the `turnstile` entry to both its `drivers` and its `map` arrays.
 
 #### Create custom drivers:
 
